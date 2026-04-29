@@ -1,70 +1,149 @@
-# Getting Started with Create React App
+# SmartGarden Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Interfaz React para el sistema de jardín inteligente educativo con tema oscuro/claro, animaciones y responsive design.
 
-## Available Scripts
+## 📋 Requisitos
 
-In the project directory, you can run:
+- Node.js 14+
+- npm o yarn
 
-### `npm start`
+## 🚀 Instalación Local
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+1. **Clonar el repositorio**
+```bash
+git clone https://github.com/TU_USUARIO/smartgarden-frontend.git
+cd smartgarden-frontend
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+2. **Instalar dependencias**
+```bash
+npm install
+# o
+yarn install
+```
 
-### `npm test`
+3. **Configurar variables de entorno**
+```bash
+cp .env.example .env.local
+# Edita .env.local y configura:
+# REACT_APP_API_URL=http://localhost:8000
+# REACT_APP_API_TIMEOUT=10000
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+4. **Ejecutar servidor de desarrollo**
+```bash
+npm start
+```
 
-### `npm run build`
+La app estará disponible en: `http://localhost:3000`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 📦 Estructura del Proyecto
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```
+src/
+├── pages/                  # Páginas de la app
+├── components/
+│   ├── common/            # Componentes reutilizables
+│   └── dashboard/         # Componentes del dashboard
+├── context/               # Context API (Auth, Theme)
+├── styles/                # Estilos globales
+├── utils/                 # Utilidades (colorScheme, etc)
+├── api.js                 # Cliente API
+└── index.js               # Punto de entrada
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🎨 Características
 
-### `npm run eject`
+- ✅ Tema oscuro/claro automático basado en preferencia del sistema
+- ✅ Animaciones suaves y micro-interacciones
+- ✅ Diseño responsive para móvil, tablet y desktop
+- ✅ Integración con API backend
+- ✅ Autenticación con rol-based access
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Páginas Disponibles
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- **Dashboard** - Panel principal con métricas
+- **Experimentos** - Gestión de experimentos STEAM
+- **Recomendaciones** - Sugerencias de IA
+- **Indicadores** - Análisis y gráficos
+- **Timeline** - Línea temporal de etapas
+- **Admin** - Gestión de usuarios y configuración
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 🌐 Desplegar en Producción
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Opción 1: Vercel (Recomendado)
+```bash
+npm i -g vercel
+vercel login
+vercel
+```
 
-## Learn More
+### Opción 2: Netlify
+```bash
+npm run build
+# Drag & drop la carpeta 'build' a Netlify
+# O conecta GitHub para deploy automático
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Opción 3: GitHub Pages
+```bash
+npm run build
+# Configura GitHub Pages en los settings del repo
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 📝 Scripts Disponibles
 
-### Code Splitting
+```bash
+npm start          # Iniciar desarrollo
+npm run build      # Build para producción
+npm test           # Ejecutar tests
+npm run eject      # Eject (no reversible!)
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 🎯 Variables de Entorno
 
-### Analyzing the Bundle Size
+```env
+# .env.local
+REACT_APP_API_URL=http://localhost:8000
+REACT_APP_API_TIMEOUT=10000
+REACT_APP_VERSION=1.0.0
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 🔐 Autenticación
 
-### Making a Progressive Web App
+La app usa `AuthContext` para manejar:
+- Login con rol (estudiante, docente, admin)
+- Persistencia de sesión
+- Protected routes
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## 🌓 Tema
 
-### Advanced Configuration
+El tema se detecta automáticamente desde:
+1. Preferencia guardada en localStorage
+2. Preferencia del sistema (prefers-color-scheme)
+3. Default: claro
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Cambiar tema desde el botón en la topbar.
 
-### Deployment
+## 🎨 Colores y Estilos
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Los colores están centralizados en `src/utils/colorScheme.js`:
+- Detectan automáticamente el modo oscuro
+- Se adaptan dinámicamente
+- Incluyen configuración para gráficos (Recharts)
 
-### `npm run build` fails to minify
+## 🤝 Contribuir
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## 📄 Licencia
+
+Este proyecto es parte de SmartGardenSchool - Educativo
+
+## 📧 Contacto
+
+Equipo de desarrollo: dev@smartgarden.local
