@@ -1,4 +1,5 @@
-const BASE = '/api';
+const API_BASE = (process.env.REACT_APP_API_URL || '').replace(/\/$/, '');
+const BASE = API_BASE ? `${API_BASE}/api` : '/api';
 
 const json = (res) => res.json();
 

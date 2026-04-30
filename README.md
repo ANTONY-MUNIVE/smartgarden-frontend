@@ -72,6 +72,17 @@ src/
 ## 🌐 Desplegar en Producción
 
 ### Opción 1: Vercel (Recomendado)
+1. Sube el repo a GitHub.
+2. Importa el proyecto desde Vercel.
+3. Configura estas variables de entorno en Vercel:
+```env
+REACT_APP_API_URL=https://TU-BACKEND.onrender.com
+REACT_APP_VERSION=1.0.0
+```
+4. Deja el build command en `npm run build`.
+5. El output directory debe ser `build`.
+
+Si prefieres usar la CLI:
 ```bash
 npm i -g vercel
 vercel login
@@ -108,6 +119,8 @@ REACT_APP_API_URL=http://localhost:8000
 REACT_APP_API_TIMEOUT=10000
 REACT_APP_VERSION=1.0.0
 ```
+
+En Vercel usa `REACT_APP_API_URL=https://TU-BACKEND.onrender.com` para apuntar al backend en Render.
 
 ## 🔐 Autenticación
 
