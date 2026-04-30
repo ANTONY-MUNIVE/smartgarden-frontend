@@ -54,20 +54,12 @@ export default function DashboardPage() {
   // NUEVO: Función que llama al endpoint de IA
   const cargarConsejoIA = async (datosSensor) => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/ia/recomendar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          humedad_suelo: 20,
-          temperatura: Number(datosSensor.temperatura || 0),
-          luz: Number(datosSensor.luminosidad || 0),
-          humedad_aire: Number(datosSensor.humedad_ambiental || 0),
-        }),
+      const data = await api.recomendarIA({
+        humedad_suelo: 20,
+        temperatura: Number(datosSensor.temperatura || 0),
+        luz: Number(datosSensor.luminosidad || 0),
+        humedad_aire: Number(datosSensor.humedad_ambiental || 0),
       });
-
-      const data = await response.json();
 
       if (data.recomendaciones && data.recomendaciones.length > 0) {
         setConsejoIA(data.recomendaciones[0]);

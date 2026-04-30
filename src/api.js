@@ -27,6 +27,10 @@ export const api = {
   // Auth
   login: (username, password) => post('/users/login', { username, password }).then(json),
 
+  // IA
+  recomendarIA: (data) => post('/ia/recomendar', data).then(json),
+  predecirIA: (data) => post('/ia/predecir', data).then(json),
+
   // Users
   getUsuarios:     ()           => fetch(`${BASE}/users`).then(json),
   crearUsuario:    (data)       => post('/users', data).then(json),
