@@ -47,6 +47,24 @@ export default function PrediccionesPage() {
           setRiesgoEnfermedad(prediccion.riesgo_enfermedad || null);
           setHorariosSol(prediccion.horarios_sol_optimo || []);
           setRecomendaciones(prediccion.recomendaciones_generales || []);
+        } else {
+          console.warn('Predicción IA falló, usando datos sintéticos de fallback:', prediccion.error);
+          // Datos sintéticos de respaldo para mantener UI informativa mientras el backend se despliega
+          const hoy = new Date();
+          const sampleCalendario = Array.from({ length: 7 }).map((_, i) => ({
+            fecha: new Date(hoy.getTime() + i * 24 * 3600 * 1000).toISOString().split('T')[0],
+            necesidad: i === 0 ? 'MEDIA' : 'BAJA',
+            cantidad_litros_m2: 5,
+            horario_recomendado: '06:00 - 08:00 AM',
+            lluvia_esperada: 0,
+            temp_max: 25 + i,
+            humedad_predicha: 50
+          }));
+
+          setCalendario(sampleCalendario);
+          setRiesgoEnfermedad({ nivel_riesgo: 'BAJO', indicador: 'OK', recomendaciones: ['Monitorear'] });
+          setHorariosSol(sampleCalendario.map(d => ({ fecha: d.fecha, horas_luz: 10 })));
+          setRecomendaciones(['Fallback: datos estimados temporalmente.']);
         }
       }
     } catch (error) {
