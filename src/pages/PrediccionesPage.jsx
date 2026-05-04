@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Topbar from '../components/common/Topbar';
 import CalendarioRiegosCard from '../components/dashboard/CalendarioRiegosCard';
 import RiesgoEnfermedadesCard from '../components/dashboard/RiesgoEnfermedadesCard';
@@ -20,8 +20,13 @@ export default function PrediccionesPage() {
   const [horariosSol, setHorariosSol] = useState([]);
   const [loading, setLoading] = useState(true);
   const [recomendaciones, setRecomendaciones] = useState([]);
+  const intervalRef = useRef(null);
 
   const cargarPredicciones = async () => {
+    // Pausar auto-refresh mientras carga manualmente
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
     try {
       setLoading(true);
 
@@ -84,13 +89,20 @@ export default function PrediccionesPage() {
       console.error('Error al cargar predicciones:', error);
     } finally {
       setLoading(false);
+      // Reiniciar auto-refresh después de cargar
+      if (!intervalRef.current) {
+        intervalRef.current = setInterval(() => {
+          cargarPredicciones();
+        }, 300000); // Actualizar cada 5 minutos
+      }
     }
   };
 
   useEffect(() => {
     cargarPredicciones();
-    const t = setInterval(cargarPredicciones, 300000); // Actualizar cada 5 minutos
-    return () => clearInterval(t);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

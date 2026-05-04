@@ -14,6 +14,7 @@ export default function RecomendacionesPage() {
   const P_CFG = RECOMENDACIONES_CFG();
   const [prediccionHumedad, setPrediccionHumedad] = useState(null);
   const [mensajePrediccion, setMensajePrediccion] = useState('Calculando predicción del modelo entrenado...');
+  const [recomendacionesIA, setRecomendacionesIA] = useState([]);
 
   const cargarConsejoIA = async () => {
     try {
@@ -47,6 +48,7 @@ export default function RecomendacionesPage() {
 
     const cargarPrediccionIA = async () => {
       try {
+        const { obtenerPrediccionCompleta } = await import('../api');
         const sensor = await api.getSensorActual();
         const datosSensor = {
           humedad_suelo: Number(sensor.humedad_suelo || 0),
@@ -55,14 +57,21 @@ export default function RecomendacionesPage() {
           humedad_aire: Number(sensor.humedad_ambiental || 0),
         };
 
-        const dataPrediccion = await api.predecirIA(datosSensor);
+        // Primero intentar predicción completa
+        const datosCompletos = await obtenerPrediccionCompleta(datosSensor);
+        if (datosCompletos && datosCompletos.recomendaciones_generales) {
+          setRecomendacionesIA(datosCompletos.recomendaciones_generales);
+          setMensajePrediccion('Recomendaciones de IA cargadas.');
+        }
 
+        // Luego cargar predicción de humedad compatibilidad
+        const dataPrediccion = await api.predecirIA(datosSensor);
         if (dataPrediccion && dataPrediccion.humedad_futura_predicha !== undefined) {
           setPrediccionHumedad(dataPrediccion.humedad_futura_predicha);
           setMensajePrediccion(dataPrediccion.mensaje || 'Predicción generada correctamente.');
         } else {
           setPrediccionHumedad(null);
-          setMensajePrediccion(dataPrediccion?.error || 'No se pudo generar la predicción.');
+          setMensajePrediccion(datosCompletos?.error || 'No se pudo generar la predicción.');
         }
       } catch (error) {
         console.error('Error al obtener predicción IA:', error);
@@ -204,6 +213,36 @@ export default function RecomendacionesPage() {
             </div>
           </div>
         </div>
+
+        {/* Recomendaciones dinámicas de IA */}
+        {recomendacionesIA.length > 0 && (
+          <div style={{
+            padding: '24px',
+            background: '#F0F9FF',
+            border: '2px solid #7DD3FC',
+            borderRadius: 'var(--radius-lg)',
+            marginBottom: '24px',
+          }}>
+            <h3 style={{ fontWeight: 700, marginBottom: 16, color: '#0369A1', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🔮 Recomendaciones Dinámicas de IA
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {recomendacionesIA.map((rec, idx) => (
+                <div key={idx} style={{
+                  padding: '12px 14px',
+                  background: '#ffffff',
+                  border: '1.5px solid #7DD3FC',
+                  borderRadius: 'var(--radius)',
+                  fontSize: '0.85rem',
+                  color: '#0369A1',
+                  fontWeight: 500,
+                }}>
+                  {rec}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {lista.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>
