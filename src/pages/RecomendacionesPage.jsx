@@ -15,6 +15,17 @@ export default function RecomendacionesPage() {
   const [prediccionHumedad, setPrediccionHumedad] = useState(null);
   const [mensajePrediccion, setMensajePrediccion] = useState('Calculando predicción del modelo entrenado...');
   const [recomendacionesIA, setRecomendacionesIA] = useState([]);
+  const [filtroEstado, setFiltroEstado] = useState('pendientes'); // 'pendientes' o 'hecho'
+
+  // Cargar estado completadas desde localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('recomendacionesIACompleted');
+    if (saved) {
+      try {
+        window.recomCompletadas = JSON.parse(saved);
+      } catch {}
+    }
+  }, []);
 
   const cargarConsejoIA = async () => {
     try {
@@ -60,7 +71,13 @@ export default function RecomendacionesPage() {
         // Primero intentar predicción completa
         const datosCompletos = await obtenerPrediccionCompleta(datosSensor);
         if (datosCompletos && datosCompletos.recomendaciones_generales) {
-          setRecomendacionesIA(datosCompletos.recomendaciones_generales);
+          // Convertir recomendaciones a objetos trackables
+          const recsConEstado = datosCompletos.recomendaciones_generales.map((rec, idx) => ({
+            id: `rec_${idx}_${Date.now()}`,
+            texto: rec,
+            completada: window.recomCompletadas && window.recomCompletadas[`rec_${idx}_${Date.now()}`] ? true : false
+          }));
+          setRecomendacionesIA(recsConEstado);
           setMensajePrediccion('Recomendaciones de IA cargadas.');
         }
 
@@ -92,6 +109,17 @@ export default function RecomendacionesPage() {
       const updated = await api.aplicarRecomendacion(id);
       setLista(prev => prev.map(r => r.id === id ? updated : r));
     } catch {}
+  };
+
+  const marcarRecomIACompleta = (idRec) => {
+    if (!window.recomCompletadas) window.recomCompletadas = {};
+    window.recomCompletadas[idRec] = true;
+    localStorage.setItem('recomendacionesIACompleted', JSON.stringify(window.recomCompletadas));
+    
+    // Actualizar estado para que desaparezca inmediatamente
+    setRecomendacionesIA(prev => 
+      prev.map(r => r.id === idRec ? { ...r, completada: true } : r)
+    );
   };
 
   if (loading) return (
@@ -226,20 +254,97 @@ export default function RecomendacionesPage() {
             <h3 style={{ fontWeight: 700, marginBottom: 16, color: '#0369A1', display: 'flex', alignItems: 'center', gap: 8 }}>
               🔮 Recomendaciones Dinámicas de IA
             </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {recomendacionesIA.map((rec, idx) => (
-                <div key={idx} style={{
-                  padding: '12px 14px',
-                  background: '#ffffff',
+
+            {/* Filtros */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16, borderBottom: '2px solid #E0F2FE', paddingBottom: 12 }}>
+              <button
+                onClick={() => setFiltroEstado('pendientes')}
+                style={{
+                  padding: '8px 16px',
+                  background: filtroEstado === 'pendientes' ? '#0369A1' : '#E0F2FE',
+                  color: filtroEstado === 'pendientes' ? '#fff' : '#0369A1',
                   border: '1.5px solid #7DD3FC',
                   borderRadius: 'var(--radius)',
+                  fontWeight: 700,
                   fontSize: '0.85rem',
-                  color: '#0369A1',
-                  fontWeight: 500,
-                }}>
-                  {rec}
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                📋 Pendientes ({recomendacionesIA.filter(r => !r.completada).length})
+              </button>
+              <button
+                onClick={() => setFiltroEstado('hecho')}
+                style={{
+                  padding: '8px 16px',
+                  background: filtroEstado === 'hecho' ? '#10B981' : '#ECFDF5',
+                  color: filtroEstado === 'hecho' ? '#fff' : '#10B981',
+                  border: '1.5px solid #6EE7B7',
+                  borderRadius: 'var(--radius)',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                ✅ Hecho ({recomendacionesIA.filter(r => r.completada).length})
+              </button>
+            </div>
+
+            {/* Lista filtrada */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {(filtroEstado === 'pendientes'
+                ? recomendacionesIA.filter(r => !r.completada)
+                : recomendacionesIA.filter(r => r.completada)
+              ).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#7C3AED', fontSize: '0.9rem' }}>
+                  {filtroEstado === 'pendientes'
+                    ? '✨ ¡Todas las recomendaciones completadas!'
+                    : '📭 Aún no hay recomendaciones completadas'}
                 </div>
-              ))}
+              ) : (
+                (filtroEstado === 'pendientes'
+                  ? recomendacionesIA.filter(r => !r.completada)
+                  : recomendacionesIA.filter(r => r.completada)
+                ).map((rec) => (
+                  <div key={rec.id} style={{
+                    padding: '14px 16px',
+                    background: rec.completada ? '#ECFDF5' : '#ffffff',
+                    border: `1.5px solid ${rec.completada ? '#6EE7B7' : '#7DD3FC'}`,
+                    borderRadius: 'var(--radius)',
+                    fontSize: '0.85rem',
+                    color: rec.completada ? '#10B981' : '#0369A1',
+                    fontWeight: 500,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    opacity: rec.completada ? 0.7 : 1,
+                    textDecoration: rec.completada ? 'line-through' : 'none',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    <span>{rec.texto}</span>
+                    {!rec.completada && (
+                      <button
+                        onClick={() => marcarRecomIACompleta(rec.id)}
+                        style={{
+                          padding: '6px 12px',
+                          background: '#10B981',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 'var(--radius)',
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
+                        ✓ Listo
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
