@@ -1,4 +1,7 @@
-const API_BASE = (process.env.REACT_APP_API_URL || '').replace(/\/$/, '');
+const DEFAULT_API_BASE = 'https://smartgarden-backend-1gxd.onrender.com';
+const API_BASE = (
+  process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? DEFAULT_API_BASE : '')
+).replace(/\/$/, '');
 const BASE = API_BASE ? `${API_BASE}/api` : '/api';
 
 const json = (res) => res.json();
