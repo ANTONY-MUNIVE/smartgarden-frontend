@@ -89,7 +89,7 @@ export default function PrediccionesPage() {
 
   useEffect(() => {
     cargarPredicciones();
-    const t = setInterval(cargarPredicciones, 30000); // Actualizar cada 30s
+    const t = setInterval(cargarPredicciones, 300000); // Actualizar cada 5 minutos
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
