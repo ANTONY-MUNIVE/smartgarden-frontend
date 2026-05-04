@@ -45,7 +45,20 @@ export default function PrediccionesPage() {
         if (!prediccion.error) {
           setCalendario(prediccion.calendario_riegos || []);
           setRiesgoEnfermedad(prediccion.riesgo_enfermedad || null);
-          setHorariosSol(prediccion.horarios_sol_optimo || []);
+
+          // Horarios: usar lo que devuelva la API, si viene vacío generar fallback a partir del pronóstico
+          let horariosApi = prediccion.horarios_sol_optimo || [];
+          if (!horariosApi || horariosApi.length === 0) {
+            const pron = prediccion.pronostico_7_dias || [];
+            horariosApi = pron.map((d) => ({
+              fecha: d.fecha,
+              horas_luz: 10,
+              salida: '06:00',
+              puesta: '16:00'
+            }));
+          }
+
+          setHorariosSol(horariosApi);
           setRecomendaciones(prediccion.recomendaciones_generales || []);
         } else {
           console.warn('Predicción IA falló, usando datos sintéticos de fallback:', prediccion.error);
