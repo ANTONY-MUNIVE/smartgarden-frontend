@@ -14,18 +14,17 @@ export default function RecomendacionesPage() {
   const P_CFG = RECOMENDACIONES_CFG();
   const [prediccionHumedad, setPrediccionHumedad] = useState(null);
   const [mensajePrediccion, setMensajePrediccion] = useState('Calculando predicción del modelo entrenado...');
-  const [recomendacionesIA, setRecomendacionesIA] = useState([]);
   const [filtroEstado, setFiltroEstado] = useState('pendientes'); // 'pendientes' o 'hecho'
+  const [ultimasRecsIA, setUltimasRecsIA] = useState(''); // Hash de recomendaciones guardadas
 
-  // Cargar estado completadas desde localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('recomendacionesIACompleted');
-    if (saved) {
-      try {
-        window.recomCompletadas = JSON.parse(saved);
-      } catch {}
+  const cargarRecomendaciones = async () => {
+    try {
+      const data = await api.getRecomendaciones();
+      setLista(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error cargando recomendaciones:', error);
     }
-  }, []);
+  };
 
   const cargarConsejoIA = async () => {
     try {
@@ -52,10 +51,7 @@ export default function RecomendacionesPage() {
   };
 
   useEffect(() => {
-    api.getRecomendaciones()
-      .then(data => setLista(Array.isArray(data) ? data : []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    cargarRecomendaciones().finally(() => setLoading(false));
 
     const cargarPrediccionIA = async () => {
       try {
@@ -68,32 +64,46 @@ export default function RecomendacionesPage() {
           humedad_aire: Number(sensor.humedad_ambiental || 0),
         };
 
-        // Primero intentar predicción completa
+        // Obtener predicción completa
         const datosCompletos = await obtenerPrediccionCompleta(datosSensor);
         if (datosCompletos && datosCompletos.recomendaciones_generales) {
-          // Convertir recomendaciones a objetos trackables
-          const recsConEstado = datosCompletos.recomendaciones_generales.map((rec, idx) => ({
-            id: `rec_${idx}_${Date.now()}`,
-            texto: rec,
-            completada: window.recomCompletadas && window.recomCompletadas[`rec_${idx}_${Date.now()}`] ? true : false
-          }));
-          setRecomendacionesIA(recsConEstado);
-          setMensajePrediccion('Recomendaciones de IA cargadas.');
+          // Hash de recomendaciones actuales para evitar duplicados
+          const hashActual = JSON.stringify(datosCompletos.recomendaciones_generales);
+
+          // Si las recomendaciones cambiaron, guardar las nuevas en BD
+          if (hashActual !== ultimasRecsIA) {
+            try {
+              // Crear recomendaciones IA en BD (solo las nuevas)
+              for (const recTexto of datosCompletos.recomendaciones_generales) {
+                await api.crearRecomendacion({
+                  accion: recTexto,
+                  descripcion: 'Recomendación automática generada por IA',
+                  prioridad: 'alta',
+                  confianza: 85,
+                  aplicada: false,
+                  icono: '🤖',
+                  variable: 'prediccion_ia'
+                });
+              }
+              // Actualizar hash y recargar lista
+              setUltimasRecsIA(hashActual);
+              await cargarRecomendaciones();
+            } catch (error) {
+              console.error('Error al guardar recomendaciones IA:', error);
+            }
+          }
+
+          setMensajePrediccion('Recomendaciones de IA sincronizadas con BD.');
         }
 
-        // Luego cargar predicción de humedad compatibilidad
+        // Predicción de humedad
         const dataPrediccion = await api.predecirIA(datosSensor);
         if (dataPrediccion && dataPrediccion.humedad_futura_predicha !== undefined) {
           setPrediccionHumedad(dataPrediccion.humedad_futura_predicha);
           setMensajePrediccion(dataPrediccion.mensaje || 'Predicción generada correctamente.');
-        } else {
-          setPrediccionHumedad(null);
-          setMensajePrediccion(datosCompletos?.error || 'No se pudo generar la predicción.');
         }
       } catch (error) {
         console.error('Error al obtener predicción IA:', error);
-        setPrediccionHumedad(null);
-        setMensajePrediccion('No se pudo cargar la predicción del modelo entrenado.');
       }
     };
 
@@ -102,24 +112,15 @@ export default function RecomendacionesPage() {
     const intervalo = setInterval(() => { cargarConsejoIA(); cargarPrediccionIA(); }, 10000);
 
     return () => clearInterval(intervalo);
-  }, []);
+  }, [ultimasRecsIA]);
 
   const aplicar = async (id) => {
     try {
       const updated = await api.aplicarRecomendacion(id);
       setLista(prev => prev.map(r => r.id === id ? updated : r));
-    } catch {}
-  };
-
-  const marcarRecomIACompleta = (idRec) => {
-    if (!window.recomCompletadas) window.recomCompletadas = {};
-    window.recomCompletadas[idRec] = true;
-    localStorage.setItem('recomendacionesIACompleted', JSON.stringify(window.recomCompletadas));
-    
-    // Actualizar estado para que desaparezca inmediatamente
-    setRecomendacionesIA(prev => 
-      prev.map(r => r.id === idRec ? { ...r, completada: true } : r)
-    );
+    } catch (error) {
+      console.error('Error al aplicar recomendación:', error);
+    }
   };
 
   if (loading) return (
@@ -242,93 +243,106 @@ export default function RecomendacionesPage() {
           </div>
         </div>
 
-        {/* Recomendaciones dinámicas de IA */}
-        {recomendacionesIA.length > 0 && (
-          <div style={{
-            padding: '24px',
-            background: '#F0F9FF',
-            border: '2px solid #7DD3FC',
-            borderRadius: 'var(--radius-lg)',
-            marginBottom: '24px',
-          }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 16, color: '#0369A1', display: 'flex', alignItems: 'center', gap: 8 }}>
-              🔮 Recomendaciones Dinámicas de IA
-            </h3>
+        {/* Filtros y lista de recomendaciones */}
+        <div style={{
+          padding: '24px',
+          background: '#F0F9FF',
+          border: '2px solid #7DD3FC',
+          borderRadius: 'var(--radius-lg)',
+          marginBottom: '24px',
+        }}>
+          <h3 style={{ fontWeight: 700, marginBottom: 16, color: '#0369A1', display: 'flex', alignItems: 'center', gap: 8 }}>
+            📋 Gestor de Recomendaciones
+          </h3>
 
-            {/* Filtros */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 16, borderBottom: '2px solid #E0F2FE', paddingBottom: 12 }}>
-              <button
-                onClick={() => setFiltroEstado('pendientes')}
-                style={{
-                  padding: '8px 16px',
-                  background: filtroEstado === 'pendientes' ? '#0369A1' : '#E0F2FE',
-                  color: filtroEstado === 'pendientes' ? '#fff' : '#0369A1',
-                  border: '1.5px solid #7DD3FC',
-                  borderRadius: 'var(--radius)',
-                  fontWeight: 700,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                📋 Pendientes ({recomendacionesIA.filter(r => !r.completada).length})
-              </button>
-              <button
-                onClick={() => setFiltroEstado('hecho')}
-                style={{
-                  padding: '8px 16px',
-                  background: filtroEstado === 'hecho' ? '#10B981' : '#ECFDF5',
-                  color: filtroEstado === 'hecho' ? '#fff' : '#10B981',
-                  border: '1.5px solid #6EE7B7',
-                  borderRadius: 'var(--radius)',
-                  fontWeight: 700,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                ✅ Hecho ({recomendacionesIA.filter(r => r.completada).length})
-              </button>
-            </div>
+          {/* Filtros */}
+          <div style={{ display: 'flex', gap: 12, marginBottom: 16, borderBottom: '2px solid #E0F2FE', paddingBottom: 12 }}>
+            <button
+              onClick={() => setFiltroEstado('pendientes')}
+              style={{
+                padding: '8px 16px',
+                background: filtroEstado === 'pendientes' ? '#0369A1' : '#E0F2FE',
+                color: filtroEstado === 'pendientes' ? '#fff' : '#0369A1',
+                border: '1.5px solid #7DD3FC',
+                borderRadius: 'var(--radius)',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              📋 Pendientes ({lista.filter(r => !r.aplicada).length})
+            </button>
+            <button
+              onClick={() => setFiltroEstado('hecho')}
+              style={{
+                padding: '8px 16px',
+                background: filtroEstado === 'hecho' ? '#10B981' : '#ECFDF5',
+                color: filtroEstado === 'hecho' ? '#fff' : '#10B981',
+                border: '1.5px solid #6EE7B7',
+                borderRadius: 'var(--radius)',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              ✅ Hecho ({lista.filter(r => r.aplicada).length})
+            </button>
+          </div>
 
-            {/* Lista filtrada */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {(filtroEstado === 'pendientes'
-                ? recomendacionesIA.filter(r => !r.completada)
-                : recomendacionesIA.filter(r => r.completada)
-              ).length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '20px', color: '#7C3AED', fontSize: '0.9rem' }}>
-                  {filtroEstado === 'pendientes'
-                    ? '✨ ¡Todas las recomendaciones completadas!'
-                    : '📭 Aún no hay recomendaciones completadas'}
-                </div>
-              ) : (
-                (filtroEstado === 'pendientes'
-                  ? recomendacionesIA.filter(r => !r.completada)
-                  : recomendacionesIA.filter(r => r.completada)
-                ).map((rec) => (
+          {/* Lista filtrada */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {(filtroEstado === 'pendientes'
+              ? lista.filter(r => !r.aplicada)
+              : lista.filter(r => r.aplicada)
+            ).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#7C3AED', fontSize: '0.9rem' }}>
+                {filtroEstado === 'pendientes'
+                  ? '✨ ¡Todas las recomendaciones completadas!'
+                  : '📭 Aún no hay recomendaciones completadas'}
+              </div>
+            ) : (
+              (filtroEstado === 'pendientes'
+                ? lista.filter(r => !r.aplicada)
+                : lista.filter(r => r.aplicada)
+              ).map((rec) => {
+                const cfg = P_CFG[rec.prioridad] || P_CFG.baja;
+                return (
                   <div key={rec.id} style={{
                     padding: '14px 16px',
-                    background: rec.completada ? '#ECFDF5' : '#ffffff',
-                    border: `1.5px solid ${rec.completada ? '#6EE7B7' : '#7DD3FC'}`,
+                    background: rec.aplicada ? '#ECFDF5' : 'rgba(3, 105, 161, 0.05)',
+                    border: `1.5px solid ${rec.aplicada ? '#6EE7B7' : cfg.border || '#7DD3FC'}`,
                     borderRadius: 'var(--radius)',
                     fontSize: '0.85rem',
-                    color: rec.completada ? '#10B981' : '#0369A1',
+                    color: rec.aplicada ? '#10B981' : (cfg.color || '#0369A1'),
                     fontWeight: 500,
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    opacity: rec.completada ? 0.7 : 1,
-                    textDecoration: rec.completada ? 'line-through' : 'none',
+                    opacity: rec.aplicada ? 0.7 : 1,
+                    textDecoration: rec.aplicada ? 'line-through' : 'none',
                     transition: 'all 0.3s ease'
                   }}>
-                    <span>{rec.texto}</span>
-                    {!rec.completada && (
+                    <div>
+                      <span>{rec.icono} {rec.accion}</span>
+                      {rec.descripcion && (
+                        <div style={{ fontSize: '0.75rem', marginTop: 4, opacity: 0.8 }}>
+                          {rec.descripcion}
+                        </div>
+                      )}
+                      {rec.created_at && (
+                        <div style={{ fontSize: '0.7rem', marginTop: 2, opacity: 0.6 }}>
+                          📅 {new Date(rec.created_at).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                    {!rec.aplicada && (
                       <button
-                        onClick={() => marcarRecomIACompleta(rec.id)}
+                        onClick={() => aplicar(rec.id)}
                         style={{
                           padding: '6px 12px',
-                          background: '#10B981',
+                          background: cfg.btn || '#10B981',
                           color: '#fff',
                           border: 'none',
                           borderRadius: 'var(--radius)',
@@ -343,81 +357,11 @@ export default function RecomendacionesPage() {
                       </button>
                     )}
                   </div>
-                ))
-              )}
-            </div>
+                );
+              })
+            )}
           </div>
-        )}
-
-        {lista.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🌿</div>
-            <p>No hay recomendaciones disponibles.</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {lista.map((r, i) => {
-              const cfg = P_CFG[r.prioridad] || P_CFG.baja;
-              return (
-                <div key={r.id} className="animate-up" style={{
-                  animationDelay: `${i * 0.08}s`,
-                  padding: '22px 24px',
-                  background: r.aplicada ? '#F9FAFB' : cfg.bg,
-                  border: `2px solid ${r.aplicada ? '#E5E7EB' : cfg.border}`,
-                  borderRadius: 'var(--radius-lg)',
-                  display: 'flex', gap: 18, alignItems: 'flex-start',
-                  opacity: r.aplicada ? 0.7 : 1,
-                  transition: 'all 0.3s ease',
-                }}>
-                  <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                    <div style={{ fontSize: 40, lineHeight: 1, marginBottom: 6 }}>
-                      {r.aplicada ? '✅' : (r.icono || cfg.emoji)}
-                    </div>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: r.aplicada ? '#6B7280' : cfg.color, background: '#fff', padding: '2px 8px', borderRadius: 20, border: `1px solid ${r.aplicada ? '#E5E7EB' : cfg.border}` }}>
-                      {r.aplicada ? '✓ Aplicado' : `${cfg.emoji} ${cfg.label}`}
-                    </div>
-                  </div>
-
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 700, color: r.aplicada ? '#9CA3AF' : cfg.color, marginBottom: 6, textDecoration: r.aplicada ? 'line-through' : 'none' }}>
-                      {r.accion}
-                    </h3>
-                    <p style={{ fontSize: '0.88rem', color: 'var(--text-soft)', lineHeight: 1.6, marginBottom: 14 }}>
-                      {r.descripcion}
-                    </p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>🎯 Confianza:</span>
-                      <div style={{ flex: 1, height: 8, background: '#fff', borderRadius: 20, overflow: 'hidden', border: `1px solid ${r.aplicada ? '#E5E7EB' : cfg.border}` }}>
-                        <div style={{ height: '100%', width: `${r.confianza}%`, background: r.aplicada ? '#9CA3AF' : cfg.btn, borderRadius: 20 }} />
-                      </div>
-                      <span style={{ fontWeight: 800, color: r.aplicada ? '#9CA3AF' : cfg.color, fontSize: '0.88rem' }}>{r.confianza}%</span>
-                    </div>
-                  </div>
-
-                  <button onClick={() => !r.aplicada && aplicar(r.id)} disabled={r.aplicada} style={{
-                    flexShrink: 0, padding: '10px 18px',
-                    background: r.aplicada ? '#E5E7EB' : cfg.btn,
-                    color: r.aplicada ? '#9CA3AF' : '#fff',
-                    border: 'none', borderRadius: 'var(--radius)',
-                    fontWeight: 800, fontSize: '0.85rem',
-                    cursor: r.aplicada ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.3s ease', alignSelf: 'center', whiteSpace: 'nowrap',
-                  }}>
-                    {r.aplicada ? '✅ Listo' : '✓ Aplicar'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {lista.length > 0 && lista.every(r => r.aplicada) && (
-          <div style={{ marginTop: 24, padding: '24px', textAlign: 'center', background: 'var(--green-light)', border: '2px solid var(--green)', borderRadius: 'var(--radius-lg)' }}>
-            <div style={{ fontSize: 48, marginBottom: 8 }}>🎉</div>
-            <div style={{ fontFamily: 'var(--font-title)', fontSize: '1.2rem', fontWeight: 700, color: 'var(--green-dark)' }}>¡Aplicaste todos los consejos!</div>
-            <div style={{ fontSize: '0.88rem', color: 'var(--text-soft)', marginTop: 4 }}>Tu huerto está recibiendo el mejor cuidado posible.</div>
-          </div>
-        )}
+        </div>
 
       </div>
     </div>

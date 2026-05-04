@@ -50,8 +50,9 @@ export const api = {
   getAlertas: () => fetch(`${BASE}/alertas`).then(json),
 
   // Recomendaciones
-  getRecomendaciones:  ()    => fetch(`${BASE}/recomendaciones`).then(json),
-  aplicarRecomendacion:(id)  => patch(`/recomendaciones/${id}/aplicar`).then(json),
+  getRecomendaciones:     ()           => fetch(`${BASE}/recomendaciones`).then(json),
+  crearRecomendacion:     (data)       => post('/recomendaciones', data).then(json),
+  aplicarRecomendacion:   (id)         => patch(`/recomendaciones/${id}/aplicar`).then(json),
 
   // Experimentos
   getExperimentos:     ()         => fetch(`${BASE}/experimentos`).then(json),
