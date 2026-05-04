@@ -221,15 +221,3 @@ export const usarPrediccionesIA = async (datosHuerto) => {
 // FORMATO DE DATOS PARA ENVIAR
 // ============================================
 
-const FORMATO_DATOS_HUERTO = {
-  // Datos de sensores (requeridos)
-  humedad_suelo: 45,      // 0-100 (%)
-  temperatura: 25,        // °C
-  luz: 800,               // lux
-  humedad_aire: 65,       // 0-100 (%)
-  
-  // Ubicación (opcional, default: Lima, Perú)
-  latitude: -12.0,
-  longitude: -77.0
-};
-
