@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Topbar from '../components/common/Topbar';
 import MetricCard from '../components/dashboard/MetricCard';
-import { api } from '../api';
+import CalendarioRiegosCard from '../components/dashboard/CalendarioRiegosCard';
+import RiesgoEnfermedadesCard from '../components/dashboard/RiesgoEnfermedadesCard';
+import HorariosSolCard from '../components/dashboard/HorariosSolCard';
+import { api, obtenerPrediccionCompleta } from '../api';
 import { useTheme } from '../context/ThemeContext';
 import { getTooltipStyle } from '../utils/colorScheme';
 
@@ -28,6 +31,12 @@ export default function DashboardPage() {
   const [consejoIA, setConsejoIA] = useState('Cargando recomendación de IA...');
   const [prioridadIA, setPrioridadIA] = useState('baja');
 
+  // NUEVO: Estados para predicciones completas
+  const [calendario, setCalendario] = useState([]);
+  const [riesgoEnfermedad, setRiesgoEnfermedad] = useState(null);
+  const [horariosSol, setHorariosSol] = useState([]);
+  const [loadingPredicciones, setLoadingPredicciones] = useState(true);
+
   const TT = getTooltipStyle();
 
   const ALERTA_CFG = {
@@ -51,27 +60,43 @@ export default function DashboardPage() {
     },
   };
 
-  // NUEVO: Función que llama al endpoint de IA
-  const cargarConsejoIA = async (datosSensor) => {
+  // NUEVO: Función que llama al endpoint de IA y predicciones completas
+  const cargarPredicciones = async (datosSensor) => {
     try {
-      const data = await api.recomendarIA({
-        humedad_suelo: 20,
+      setLoadingPredicciones(true);
+
+      // 1. Obtener recomendación básica
+      const dataRecomendacion = await api.recomendarIA({
+        humedad_suelo: Number(datosSensor.humedad_suelo || 20),
         temperatura: Number(datosSensor.temperatura || 0),
         luz: Number(datosSensor.luminosidad || 0),
         humedad_aire: Number(datosSensor.humedad_ambiental || 0),
       });
 
-      if (data.recomendaciones && data.recomendaciones.length > 0) {
-        setConsejoIA(data.recomendaciones[0]);
-        setPrioridadIA(data.prioridad || 'baja');
-      } else {
-        setConsejoIA('La IA no encontró recomendaciones por ahora.');
-        setPrioridadIA('baja');
+      if (dataRecomendacion.recomendaciones && dataRecomendacion.recomendaciones.length > 0) {
+        setConsejoIA(dataRecomendacion.recomendaciones[0]);
+        setPrioridadIA(dataRecomendacion.prioridad || 'baja');
+      }
+
+      // 2. Obtener predicción completa
+      const datosParaPrediccion = {
+        humedad_suelo: Number(datosSensor.humedad_suelo || 50),
+        temperatura: Number(datosSensor.temperatura || 25),
+        luz: Number(datosSensor.luminosidad || 800),
+        humedad_aire: Number(datosSensor.humedad_ambiental || 65),
+      };
+
+      const prediccionCompleta = await obtenerPrediccionCompleta(datosParaPrediccion);
+
+      if (!prediccionCompleta.error) {
+        setCalendario(prediccionCompleta.calendario_riegos || []);
+        setRiesgoEnfermedad(prediccionCompleta.riesgo_enfermedad || null);
+        setHorariosSol(prediccionCompleta.horarios_sol_optimo || []);
       }
     } catch (error) {
-      console.error('Error al obtener recomendación IA:', error);
-      setConsejoIA('No se pudo cargar la recomendación de IA.');
-      setPrioridadIA('desconocida');
+      console.error('Error al obtener predicciones:', error);
+    } finally {
+      setLoadingPredicciones(false);
     }
   };
 
@@ -87,8 +112,8 @@ export default function DashboardPage() {
         setSensor(current);
         setUltimaAct(new Date());
 
-        // NUEVO: cada vez que llegan sensores actuales, se pide recomendación a la IA
-        cargarConsejoIA(current);
+        // NUEVO: cada vez que llegan sensores actuales, se piden predicciones a la IA
+        cargarPredicciones(current);
       }
 
       if (Array.isArray(history) && history.length > 0) {
@@ -98,6 +123,15 @@ export default function DashboardPage() {
           temperatura: Math.round(r.temperatura),
           luz: Math.round(r.luminosidad),
         })).reverse());
+      }
+
+      if (Array.isArray(alertasData)) setAlertas(alertasData);
+    } catch {
+      // servidor no disponible — la UI muestra los valores vacíos
+    } finally {
+      setLoading(false);
+    }
+  };
       }
 
       if (Array.isArray(alertasData)) setAlertas(alertasData);
@@ -204,7 +238,7 @@ export default function DashboardPage() {
         <div style={{
           padding: '18px 22px', background: 'var(--accent-light)',
           border: '2px solid #FCD88A', borderRadius: 'var(--radius-lg)',
-          display: 'flex', alignItems: 'center', gap: 14,
+          display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20,
         }}>
           <span style={{ fontSize: 32, flexShrink: 0 }}>🤖</span>
           <div>
@@ -217,6 +251,18 @@ export default function DashboardPage() {
             <div style={{ fontSize: '0.75rem', color: '#92400E', marginTop: 4 }}>
               Prioridad IA: {prioridadIA}
             </div>
+          </div>
+        </div>
+
+        {/* NUEVO: Predicciones avanzadas */}
+        <div style={{ marginBottom: 20 }}>
+          <h2 className="section-title" style={{ marginBottom: 16 }}>🔮 Predicciones Inteligentes (7 días)</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: 20 }}>
+            <CalendarioRiegosCard calendario={calendario} loading={loadingPredicciones} />
+            <RiesgoEnfermedadesCard riesgo={riesgoEnfermedad} loading={loadingPredicciones} />
+          </div>
+          <div style={{ marginTop: 20 }}>
+            <HorariosSolCard horarios={horariosSol} loading={loadingPredicciones} />
           </div>
         </div>
 

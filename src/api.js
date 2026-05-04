@@ -67,3 +67,169 @@ export const api = {
   // Indicadores
   getIndicadores: () => fetch(`${BASE}/indicadores`).then(json),
 };
+
+/**
+ * 🚀 PREDICCIÓN COMPLETA DE IA
+ * Análisis integrado: clima + riegos + enfermedades + horarios de sol
+ */
+export const obtenerPrediccionCompleta = async (datosHuerto) => {
+  try {
+    const response = await fetch(`${API_BASE}/api/ia/prediccion-completa`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        humedad_suelo: datosHuerto.humedad_suelo || 50,
+        temperatura: datosHuerto.temperatura || 25,
+        luz: datosHuerto.luz || 800,
+        humedad_aire: datosHuerto.humedad_aire || 65,
+        latitude: datosHuerto.latitude || -12.0,
+        longitude: datosHuerto.longitude || -77.0
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error en predicción completa:', error);
+    return { error: error.message };
+  }
+};
+
+/**
+ * 📅 CALENDARIO DE RIEGOS
+ * Obtiene predicción de 7 días para riego óptimo
+ */
+export const obtenerCalendarioRiegos = async (datosHuerto) => {
+  try {
+    const response = await fetch(`${API_BASE}/api/ia/calendario-riegos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        humedad_suelo: datosHuerto.humedad_suelo || 50,
+        temperatura: datosHuerto.temperatura || 25,
+        luz: datosHuerto.luz || 800,
+        humedad_aire: datosHuerto.humedad_aire || 65
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error en calendario de riegos:', error);
+    return { error: error.message };
+  }
+};
+
+/**
+ * 🦠 RIESGO DE ENFERMEDADES
+ * Predice probabilidad de enfermedades basado en clima y humedad
+ */
+export const obtenerRiesgoEnfermedades = async (datosHuerto) => {
+  try {
+    const response = await fetch(`${API_BASE}/api/ia/riesgo-enfermedades`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        humedad_suelo: datosHuerto.humedad_suelo || 50,
+        temperatura: datosHuerto.temperatura || 25,
+        luz: datosHuerto.luz || 800,
+        humedad_aire: datosHuerto.humedad_aire || 65
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error en análisis de enfermedades:', error);
+    return { error: error.message };
+  }
+};
+
+/**
+ * ☀️ HORARIOS DE SOL
+ * Obtiene salida/puesta de sol y horas de luz útil para cada día
+ */
+export const obtenerHorariosSol = async (datosHuerto) => {
+  try {
+    const response = await fetch(`${API_BASE}/api/ia/horarios-sol`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        humedad_suelo: datosHuerto.humedad_suelo || 50,
+        temperatura: datosHuerto.temperatura || 25,
+        luz: datosHuerto.luz || 800,
+        humedad_aire: datosHuerto.humedad_aire || 65
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error en horarios de sol:', error);
+    return { error: error.message };
+  }
+};
+
+/**
+ * 🌡️ CLIMA ACTUAL
+ * Obtiene clima actual sin consumir datos de sensores
+ */
+export const obtenerClimaActual = async (latitude = -12.0, longitude = -77.0) => {
+  try {
+    const response = await fetch(
+      `${API_BASE}/api/ia/clima-actual?latitude=${latitude}&longitude=${longitude}`,
+      { method: 'GET' }
+    );
+    return await response.json();
+  } catch (error) {
+    console.error('Error al obtener clima:', error);
+    return { error: error.message };
+  }
+};
+
+// ============================================
+// EJEMPLO DE USO EN UN COMPONENTE REACT
+// ============================================
+
+/**
+ * Ejemplo de componente que muestra todas las predicciones
+ */
+export const usarPrediccionesIA = async (datosHuerto) => {
+  // 1. Obtener predicción completa
+  const prediccion = await obtenerPrediccionCompleta(datosHuerto);
+  
+  if (prediccion.error) {
+    console.error('Error:', prediccion.error);
+    return null;
+  }
+  
+  return {
+    // Información general
+    timestamp: prediccion.timestamp,
+    ubicacion: prediccion.ubicacion,
+    
+    // Clima
+    clima_actual: prediccion.clima_actual,
+    pronostico_7_dias: prediccion.pronostico_7_dias,
+    
+    // Alertas
+    alertas_clima: prediccion.alertas_clima,
+    
+    // Predicciones
+    calendario_riegos: prediccion.calendario_riegos,
+    riesgo_enfermedad: prediccion.riesgo_enfermedad,
+    horarios_sol_optimo: prediccion.horarios_sol_optimo,
+    
+    // Recomendaciones
+    recomendaciones: prediccion.recomendaciones_generales
+  };
+};
+
+// ============================================
+// FORMATO DE DATOS PARA ENVIAR
+// ============================================
+
+const FORMATO_DATOS_HUERTO = {
+  // Datos de sensores (requeridos)
+  humedad_suelo: 45,      // 0-100 (%)
+  temperatura: 25,        // °C
+  luz: 800,               // lux
+  humedad_aire: 65,       // 0-100 (%)
+  
+  // Ubicación (opcional, default: Lima, Perú)
+  latitude: -12.0,
+  longitude: -77.0
+};
+

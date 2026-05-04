@@ -4,6 +4,7 @@ import { LogOut } from 'lucide-react';
 
 const NAV = [
   { to: '/dashboard',       icon: '🏠', label: 'Inicio',        roles: ['estudiante','docente','admin'] },
+  { to: '/predicciones',    icon: '🔮', label: 'Predicciones',  roles: ['estudiante','docente','admin'] },
   { to: '/recomendaciones', icon: '🤖', label: 'Consejos IA',   roles: ['estudiante','docente','admin'] },
   { to: '/experimentos',    icon: '🔬', label: 'Experimentos',  roles: ['estudiante','docente','admin'] },
   { to: '/linea-tiempo',    icon: '🌱', label: 'Mi Cultivo',    roles: ['estudiante','docente','admin'] },
