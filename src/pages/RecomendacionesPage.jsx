@@ -1,22 +1,26 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Topbar from '../components/common/Topbar';
 import { api } from '../api';
 import { RECOMENDACIONES_CFG } from '../utils/colorScheme';
 
 export default function RecomendacionesPage() {
+  const navigate = useNavigate();
   const [lista, setLista] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [consejoIA, setConsejoIA] = useState('Analizando datos actuales del huerto...');
   const [prioridadIA, setPrioridadIA] = useState('baja');
   const P_CFG = RECOMENDACIONES_CFG();
+  const [prediccionHumedad, setPrediccionHumedad] = useState(null);
+  const [mensajePrediccion, setMensajePrediccion] = useState('Calculando predicción del modelo entrenado...');
 
   const cargarConsejoIA = async () => {
     try {
       const sensor = await api.getSensorActual();
       const data = await api.recomendarIA({
         humedad_suelo: Number(sensor.humedad_suelo || 0),
-        temperatura: 80,
+        temperatura: Number(sensor.temperatura || 0),
         luz: Number(sensor.luminosidad || 0),
         humedad_aire: Number(sensor.humedad_ambiental || 0),
       });
@@ -41,8 +45,35 @@ export default function RecomendacionesPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
 
+    const cargarPrediccionIA = async () => {
+      try {
+        const sensor = await api.getSensorActual();
+        const datosSensor = {
+          humedad_suelo: Number(sensor.humedad_suelo || 0),
+          temperatura: Number(sensor.temperatura || 0),
+          luz: Number(sensor.luminosidad || 0),
+          humedad_aire: Number(sensor.humedad_ambiental || 0),
+        };
+
+        const dataPrediccion = await api.predecirIA(datosSensor);
+
+        if (dataPrediccion && dataPrediccion.humedad_futura_predicha !== undefined) {
+          setPrediccionHumedad(dataPrediccion.humedad_futura_predicha);
+          setMensajePrediccion(dataPrediccion.mensaje || 'Predicción generada correctamente.');
+        } else {
+          setPrediccionHumedad(null);
+          setMensajePrediccion(dataPrediccion?.error || 'No se pudo generar la predicción.');
+        }
+      } catch (error) {
+        console.error('Error al obtener predicción IA:', error);
+        setPrediccionHumedad(null);
+        setMensajePrediccion('No se pudo cargar la predicción del modelo entrenado.');
+      }
+    };
+
     cargarConsejoIA();
-    const intervalo = setInterval(cargarConsejoIA, 10000);
+    cargarPrediccionIA();
+    const intervalo = setInterval(() => { cargarConsejoIA(); cargarPrediccionIA(); }, 10000);
 
     return () => clearInterval(intervalo);
   }, []);
@@ -83,6 +114,45 @@ export default function RecomendacionesPage() {
             </div>
           </div>
         </div>
+
+        {/* Predicciones de IA */}
+        <section style={{
+          padding: '24px',
+          borderRadius: '16px',
+          background: '#EFF6FF',
+          border: '2px solid #BFDBFE',
+          color: '#1D4ED8',
+          marginBottom: '24px',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+          position: 'relative',
+        }}>
+          <span style={{ position: 'absolute', left: 20, top: 20, fontSize: '2rem', background: '#fff', borderRadius: '50%', border: '2px solid #BFDBFE', padding: '4px 8px', boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>🤖</span>
+
+          <div style={{ display: 'inline-block', padding: '6px 14px', borderRadius: '999px', background: '#FFFFFF', fontWeight: 700, fontSize: '0.9rem', marginBottom: '10px', marginLeft: '52px', border: '1.5px solid #BFDBFE' }}>🤖 Modelo entrenado</div>
+
+          <h3 style={{ margin: '0 0 8px 52px', fontSize: '1.1rem', fontWeight: 800 }}>Predicciones de IA</h3>
+
+          {prediccionHumedad !== null ? (
+            <>
+              <p style={{ marginBottom: '8px', marginLeft: '52px', fontSize: '0.95rem' }}>Humedad futura estimada del suelo:</p>
+
+              <p style={{ fontSize: '1.8rem', fontWeight: 900, margin: '8px 0 8px 52px' }}>{prediccionHumedad}%</p>
+
+              <p style={{ marginBottom: '8px', marginLeft: '52px', fontSize: '0.95rem' }}><strong>Modelo usado:</strong> modelo_humedad.pkl</p>
+
+              <p style={{ fontWeight: 700, margin: '0 0 0 52px', fontSize: '0.95rem' }}>{mensajePrediccion}</p>
+
+              <button onClick={() => navigate('/recomendaciones/detallesIA')} style={{ marginTop: '16px', marginLeft: '52px', padding: '11px 20px', background: '#2563EB', color: '#FFFFFF', border: 'none', borderRadius: '12px', fontWeight: 900, fontSize: '0.9rem', cursor: 'pointer', boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)' }}>Ver detalles</button>
+            </>
+          ) : (
+            <>
+              <p style={{ fontWeight: 700, margin: '0 0 0 52px', fontSize: '0.95rem' }}>{mensajePrediccion}</p>
+
+              <button onClick={() => navigate('/recomendaciones/detallesIA')} style={{ marginTop: '16px', marginLeft: '52px', padding: '11px 20px', background: '#2563EB', color: '#FFFFFF', border: 'none', borderRadius: '12px', fontWeight: 900, fontSize: '0.9rem', cursor: 'pointer', boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)' }}>Ver detalles</button>
+            </>
+          )}
+
+        </section>
 
         <div style={{
           padding: '22px 24px',

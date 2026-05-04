@@ -8,6 +8,7 @@ import LoginPage           from './pages/LoginPage';
 import DashboardPage       from './pages/DashboardPage';
 import PrediccionesPage    from './pages/PrediccionesPage';
 import RecomendacionesPage from './pages/RecomendacionesPage';
+import DetallesIAPage from './pages/DetallesIAPage';
 import ExperimentosPage    from './pages/ExperimentosPage';
 import LineaTiempoPage     from './pages/LineaTiempoPage';
 import IndicadoresPage     from './pages/IndicadoresPage';
@@ -40,6 +41,7 @@ function AppRoutes() {
       <Route path="/dashboard"       element={<PrivateRoute><Layout><DashboardPage /></Layout></PrivateRoute>} />
       <Route path="/predicciones"    element={<PrivateRoute><Layout><PrediccionesPage /></Layout></PrivateRoute>} />
       <Route path="/recomendaciones" element={<PrivateRoute><Layout><RecomendacionesPage /></Layout></PrivateRoute>} />
+      <Route path="/recomendaciones/detallesIA" element={<PrivateRoute><Layout><DetallesIAPage /></Layout></PrivateRoute>} />
       <Route path="/experimentos"    element={<PrivateRoute><Layout><ExperimentosPage /></Layout></PrivateRoute>} />
       <Route path="/linea-tiempo"    element={<PrivateRoute><Layout><LineaTiempoPage /></Layout></PrivateRoute>} />
       <Route path="/niveles"         element={<PrivateRoute><Layout><NivelesPage /></Layout></PrivateRoute>} />
