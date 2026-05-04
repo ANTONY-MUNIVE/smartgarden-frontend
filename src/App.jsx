@@ -31,7 +31,6 @@ function Layout({ children }) {
   );
 }
 
-
 function AppRoutes() {
   const { user } = useAuth();
   return (
