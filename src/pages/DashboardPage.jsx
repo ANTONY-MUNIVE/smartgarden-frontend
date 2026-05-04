@@ -132,15 +132,6 @@ export default function DashboardPage() {
       setLoading(false);
     }
   };
-      }
-
-      if (Array.isArray(alertasData)) setAlertas(alertasData);
-    } catch {
-      // servidor no disponible — la UI muestra los valores vacíos
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     cargarDatos();
