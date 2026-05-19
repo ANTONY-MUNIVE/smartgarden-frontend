@@ -155,24 +155,24 @@ export default function DashboardPage() {
       <Topbar title="¿Cómo está mi huerto?" subtitle="Datos en tiempo real de los sensores" emoji="🏠" />
       <div className="page-wrapper">
 
-        <div style={{
+        <div className="dashboard-live-pill" style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
           padding: '6px 14px', background: 'var(--green-light)',
           border: '1.5px solid var(--green)', borderRadius: 20,
-          fontSize: '0.8rem', fontWeight: 700, color: 'var(--green)', marginBottom: 20,
+          fontSize: '0.8rem', fontWeight: 700, color: 'var(--green)', marginBottom: isMobile ? 14 : 20,
         }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: loading ? '#FCD88A' : 'var(--green)' }} />
           {loading ? 'Cargando...' : `Actualizando cada 10s · ${ultimaAct.toLocaleTimeString('es-PE')}`}
         </div>
 
-        <div className="metrics-grid" style={{ marginBottom: 24 }}>
+        <div className="metrics-grid" style={{ marginBottom: isMobile ? 16 : 24 }}>
           <MetricCard icon="💧" label="Humedad del Suelo" value={Math.round(sensor.humedad_suelo)} unit="%" color="green" estado={estadoH} />
           <MetricCard icon="🌡️" label="Temperatura" value={Math.round(sensor.temperatura)} unit="°C" color="red" estado={estadoT} />
           <MetricCard icon="☀️" label="Luz Solar" value={Math.round(sensor.luminosidad)} unit="lux" color="yellow" estado="adecuado" />
           <MetricCard icon="🌫️" label="Humedad del Aire" value={Math.round(sensor.humedad_ambiental)} unit="%" color="blue" estado="adecuado" />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 300px', gap: 20, marginBottom: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 300px', gap: isMobile ? 14 : 20, marginBottom: isMobile ? 16 : 20 }}>
           <div className="card">
             <h2 className="section-title">📈 Cómo han cambiado los valores hoy</h2>
             {historico.length > 0 ? (
@@ -210,19 +210,19 @@ export default function DashboardPage() {
                 ✅ Sin alertas activas
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 8 : 10 }}>
                 {alertas.slice(0, 5).map(a => {
                   const cfg = ALERTA_CFG[a.tipo] || ALERTA_CFG.info;
                   return (
-                    <div key={a.id} style={{
-                      padding: '12px 14px', background: cfg.bg,
+                    <div key={a.id} className="dashboard-alert-item" style={{
+                      padding: isMobile ? '10px 12px' : '12px 14px', background: cfg.bg,
                       border: `1.5px solid ${cfg.border}`,
                       borderRadius: 'var(--radius)', display: 'flex', gap: 10, alignItems: 'flex-start',
                     }}>
-                      <span style={{ fontSize: 20, flexShrink: 0 }}>{cfg.emoji}</span>
+                      <span style={{ fontSize: isMobile ? 18 : 20, flexShrink: 0 }}>{cfg.emoji}</span>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.82rem', color: cfg.color }}>{a.mensaje}</div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>{a.variable}</div>
+                        <div style={{ fontWeight: 700, fontSize: isMobile ? '0.78rem' : '0.82rem', color: cfg.color, lineHeight: 1.35 }}>{a.mensaje}</div>
+                        <div style={{ fontSize: isMobile ? '0.68rem' : '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>{a.variable}</div>
                       </div>
                     </div>
                   );
@@ -233,20 +233,20 @@ export default function DashboardPage() {
         </div>
 
         {/* NUEVO: Consejo conectado con la API de IA */}
-        <div style={{
-          padding: '18px 22px', background: 'var(--accent-light)',
+        <div className="dashboard-advice-card" style={{
+          padding: isMobile ? '14px 16px' : '18px 22px', background: 'var(--accent-light)',
           border: '2px solid #FCD88A', borderRadius: 'var(--radius-lg)',
-          display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: 14, marginBottom: 20,
+          display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 10 : 14, marginBottom: isMobile ? 16 : 20,
         }}>
-          <span style={{ fontSize: 32, flexShrink: 0 }}>🤖</span>
+          <span style={{ fontSize: isMobile ? 28 : 32, flexShrink: 0 }}>🤖</span>
           <div>
             <div style={{ fontWeight: 800, color: '#92400E', marginBottom: 2 }}>
               Consejo IA
             </div>
-            <div style={{ fontSize: '0.88rem', color: '#B45309' }}>
+            <div style={{ fontSize: isMobile ? '0.82rem' : '0.88rem', color: '#B45309', lineHeight: 1.45 }}>
               {consejoIA}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#92400E', marginTop: 4 }}>
+            <div style={{ fontSize: isMobile ? '0.72rem' : '0.75rem', color: '#92400E', marginTop: 4 }}>
               Prioridad IA: {prioridadIA}
             </div>
           </div>
@@ -254,12 +254,12 @@ export default function DashboardPage() {
 
         {/* NUEVO: Predicciones avanzadas */}
         <div style={{ marginBottom: 20 }}>
-          <h2 className="section-title" style={{ marginBottom: 16 }}>🔮 Predicciones Inteligentes (7 días)</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
+          <h2 className="section-title" style={{ marginBottom: isMobile ? 12 : 16 }}>🔮 Predicciones Inteligentes (7 días)</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))', gap: isMobile ? 14 : 20 }}>
             <CalendarioRiegosCard calendario={calendario} loading={loadingPredicciones} />
             <RiesgoEnfermedadesCard riesgo={riesgoEnfermedad} loading={loadingPredicciones} />
           </div>
-          <div style={{ marginTop: 20 }}>
+          <div style={{ marginTop: isMobile ? 14 : 20 }}>
             <HorariosSolCard horarios={horariosSol} loading={loadingPredicciones} />
           </div>
         </div>

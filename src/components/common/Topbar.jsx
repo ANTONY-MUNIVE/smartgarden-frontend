@@ -32,14 +32,14 @@ export default function Topbar({ title, subtitle, emoji = '🌿' }) {
           background: 'var(--green-light)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
         }}>{emoji}</div>
-        <div>
+        <div className="topbar-title-block">
           <h1 className="page-title">{title}</h1>
-          {subtitle && <p className="page-subtitle">{subtitle}</p>}
+          {subtitle && <p className="page-subtitle topbar-subtitle">{subtitle}</p>}
         </div>
       </div>
 
       <div className="topbar-actions">
-        <div style={{
+        <div className="topbar-chip topbar-chip-status" style={{
           display: 'flex', alignItems: 'center', gap: 6,
           padding: '6px 14px', background: 'var(--green-light)',
           border: '1.5px solid var(--green)', borderRadius: 20,
@@ -49,7 +49,7 @@ export default function Topbar({ title, subtitle, emoji = '🌿' }) {
           Sensores activos
         </div>
 
-        <div style={{
+        <div className="topbar-chip topbar-chip-time" style={{
           padding: '6px 14px', background: 'var(--bg)',
           border: '1.5px solid var(--border)', borderRadius: 20,
           fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-soft)',
@@ -62,6 +62,7 @@ export default function Topbar({ title, subtitle, emoji = '🌿' }) {
           onClick={toggleTheme}
           title={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
           aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+          className="topbar-icon-btn"
           style={{
             width: 38, height: 38, borderRadius: '50%',
             background: 'var(--bg)', border: '1.5px solid var(--border)',
@@ -73,7 +74,7 @@ export default function Topbar({ title, subtitle, emoji = '🌿' }) {
           {isDark ? <SunMedium size={18} /> : <MoonStar size={18} />}
         </button>
 
-        <div style={{
+        <div className="topbar-avatar" style={{
           width: 38, height: 38, borderRadius: '50%',
           background: 'var(--green-light)', border: '2px solid var(--green)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,

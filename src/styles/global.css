@@ -177,6 +177,12 @@ body.menu-open { overflow: hidden; }
   }
   .topbar > div:first-child { flex: 1 1 auto; min-width: 0; }
   .topbar-actions { width: 100%; justify-content: space-between; }
+  .topbar-title-block { min-width: 0; }
+  .topbar-chip { font-size: 0.76rem !important; padding: 5px 10px !important; border-radius: 14px !important; }
+  .topbar-chip-status { flex: 1 1 auto; justify-content: center; }
+  .topbar-chip-time { flex-shrink: 0; }
+  .topbar-icon-btn, .topbar-avatar { width: 34px !important; height: 34px !important; }
+  .metric-card { padding: 14px !important; }
   .mobile-menu-btn { display: inline-flex; }
   .sidebar-shell {
     width: min(86vw, 320px) !important;
@@ -192,8 +198,12 @@ body.menu-open { overflow: hidden; }
 
 @media (max-width: 480px) {
   html { font-size: 15px; }
-  .topbar-actions { gap: 8px; }
-  .topbar-actions > div { width: 100%; justify-content: center; }
+  .topbar-actions { gap: 6px; }
+  .topbar-subtitle { display: none; }
+  .topbar-chip-status { width: 100%; }
+  .topbar-chip-time { min-width: 0; }
+  .topbar-chip-time { display: none !important; }
   .page-title { font-size: 1.25rem; }
   .page-subtitle { font-size: 0.8rem; }
+  .dashboard-live-pill { width: 100%; justify-content: center; text-align: center; }
 }

@@ -8,7 +8,7 @@ export default function MetricCard({ icon, label, value, unit, delta, estado, co
   const c = colores[color] || colores.green;
 
   return (
-    <div className="card" style={{ background: c.bg, borderColor: c.border, padding: '20px' }}>
+    <div className="card metric-card" style={{ background: c.bg, borderColor: c.border, padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
         <div style={{
           width: 42, height: 42, background: c.bg, border: `1px solid ${c.border}`,
