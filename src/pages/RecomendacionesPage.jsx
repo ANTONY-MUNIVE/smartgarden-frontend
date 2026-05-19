@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Topbar from '../components/common/Topbar';
 import { api } from '../api';
@@ -15,7 +15,7 @@ export default function RecomendacionesPage() {
   const [prediccionHumedad, setPrediccionHumedad] = useState(null);
   const [mensajePrediccion, setMensajePrediccion] = useState('Calculando predicción del modelo entrenado...');
   const [filtroEstado, setFiltroEstado] = useState('pendientes'); // 'pendientes' o 'hecho'
-  const [ultimasRecsIA, setUltimasRecsIA] = useState(''); // Hash de recomendaciones guardadas
+  const ultimasRecsIARef = useRef(''); // Hash de recomendaciones guardadas
 
   const cargarRecomendaciones = async () => {
     try {
@@ -71,7 +71,7 @@ export default function RecomendacionesPage() {
           const hashActual = JSON.stringify(datosCompletos.recomendaciones_generales);
 
           // Si las recomendaciones cambiaron, guardar las nuevas en BD
-          if (hashActual !== ultimasRecsIA) {
+          if (hashActual !== ultimasRecsIARef.current) {
             try {
               // Crear recomendaciones IA en BD (solo las nuevas)
               for (const recTexto of datosCompletos.recomendaciones_generales) {
@@ -86,7 +86,7 @@ export default function RecomendacionesPage() {
                 });
               }
               // Actualizar hash y recargar lista
-              setUltimasRecsIA(hashActual);
+              ultimasRecsIARef.current = hashActual;
               await cargarRecomendaciones();
             } catch (error) {
               console.error('Error al guardar recomendaciones IA:', error);
@@ -112,7 +112,7 @@ export default function RecomendacionesPage() {
     const intervalo = setInterval(() => { cargarConsejoIA(); cargarPrediccionIA(); }, 10000);
 
     return () => clearInterval(intervalo);
-  }, [ultimasRecsIA]);
+  }, []);
 
   const aplicar = async (id) => {
     try {
@@ -130,6 +130,14 @@ export default function RecomendacionesPage() {
   );
 
   const cfgIA = P_CFG[prioridadIA] || P_CFG.baja;
+
+  const getIconoVisible = (rec) => {
+    const icono = typeof rec.icono === 'string' ? rec.icono.trim() : '';
+    if (!icono || icono.includes('�') || icono.includes('Ã') || icono.includes('ð') || icono === '??') {
+      return (P_CFG[rec.prioridad] || P_CFG.baja).emoji || '💡';
+    }
+    return icono;
+  };
 
   return (
     <div style={{ flex: 1 }}>
@@ -325,7 +333,7 @@ export default function RecomendacionesPage() {
                     transition: 'all 0.3s ease'
                   }}>
                     <div>
-                      <span>{rec.icono} {rec.accion}</span>
+                      <span>{getIconoVisible(rec)} {rec.accion}</span>
                       {rec.descripcion && (
                         <div style={{ fontSize: '0.75rem', marginTop: 4, opacity: 0.8 }}>
                           {rec.descripcion}
