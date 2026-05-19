@@ -21,6 +21,7 @@ function formatHora(isoStr) {
 
 export default function DashboardPage() {
   const { isDark } = useTheme();
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
   const [sensor, setSensor] = useState(SENSOR_VACIO);
   const [historico, setHistorico] = useState([]);
   const [alertas, setAlertas] = useState([]);
@@ -140,6 +141,12 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const estadoH = sensor.humedad_suelo < 30 ? 'critico' : sensor.humedad_suelo < 50 ? 'advertencia' : 'adecuado';
   const estadoT = sensor.temperatura > 35 ? 'critico' : sensor.temperatura > 30 ? 'advertencia' : 'adecuado';
 
@@ -165,11 +172,11 @@ export default function DashboardPage() {
           <MetricCard icon="🌫️" label="Humedad del Aire" value={Math.round(sensor.humedad_ambiental)} unit="%" color="blue" estado="adecuado" />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, marginBottom: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 300px', gap: 20, marginBottom: 20 }}>
           <div className="card">
             <h2 className="section-title">📈 Cómo han cambiado los valores hoy</h2>
             {historico.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={isMobile ? 180 : 220}>
                 <AreaChart data={historico.slice(-12)}>
                   <defs>
                     <linearGradient id="gH" x1="0" y1="0" x2="0" y2="1">
@@ -190,7 +197,7 @@ export default function DashboardPage() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              <div style={{ height: isMobile ? 180 : 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                 📊 Sin datos históricos aún
               </div>
             )}
@@ -229,7 +236,7 @@ export default function DashboardPage() {
         <div style={{
           padding: '18px 22px', background: 'var(--accent-light)',
           border: '2px solid #FCD88A', borderRadius: 'var(--radius-lg)',
-          display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20,
+          display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: 14, marginBottom: 20,
         }}>
           <span style={{ fontSize: 32, flexShrink: 0 }}>🤖</span>
           <div>
@@ -248,7 +255,7 @@ export default function DashboardPage() {
         {/* NUEVO: Predicciones avanzadas */}
         <div style={{ marginBottom: 20 }}>
           <h2 className="section-title" style={{ marginBottom: 16 }}>🔮 Predicciones Inteligentes (7 días)</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
             <CalendarioRiegosCard calendario={calendario} loading={loadingPredicciones} />
             <RiesgoEnfermedadesCard riesgo={riesgoEnfermedad} loading={loadingPredicciones} />
           </div>
