@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { LogOut } from 'lucide-react';
+import { useLayout } from '../../context/LayoutContext';
 
 const NAV = [
   { to: '/dashboard',       icon: '🏠', label: 'Inicio',        roles: ['estudiante','docente','admin'] },
@@ -17,12 +18,18 @@ const NAV = [
 const ROL_COLOR = { estudiante: '#2D9B5A', docente: '#3B82F6', admin: '#F5A623' };
 const ROL_LABEL = { estudiante: 'Estudiante', docente: 'Docente', admin: 'Admin' };
 
-export default function Sidebar() {
+export default function Sidebar({ onNavigate }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { mobileSidebarOpen, closeMobileSidebar } = useLayout();
+
+  const handleNavigate = () => {
+    onNavigate?.();
+    closeMobileSidebar();
+  };
 
   return (
-    <aside style={{
+    <aside className={`sidebar-shell ${mobileSidebarOpen ? 'open' : ''}`} style={{
       width: 'var(--sidebar-w)', background: 'var(--white)',
       borderRight: '1px solid var(--border)', height: '100vh',
       position: 'fixed', left: 0, top: 0,
@@ -49,7 +56,7 @@ export default function Sidebar() {
             color: isActive ? 'var(--green)' : 'var(--text-soft)',
             background: isActive ? 'var(--green-light)' : 'transparent',
             transition: 'var(--transition)',
-          })}>
+          })} onClick={handleNavigate}>
             <span style={{ fontSize: 18 }}>{icon}</span>
             {label}
           </NavLink>
@@ -64,7 +71,7 @@ export default function Sidebar() {
             <div style={{ fontSize: '0.7rem', fontWeight: 700, color: ROL_COLOR[user?.rol] }}>{ROL_LABEL[user?.rol]}</div>
           </div>
         </div>
-        <button onClick={() => { logout(); navigate('/login'); }} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', fontSize: '0.85rem' }}>
+        <button onClick={() => { handleNavigate(); logout(); navigate('/login'); }} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', fontSize: '0.85rem' }}>
           <LogOut size={15} /> Salir
         </button>
       </div>

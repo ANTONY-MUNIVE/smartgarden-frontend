@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { LayoutProvider, useLayout } from './context/LayoutContext';
 import Sidebar from './components/common/Sidebar';
 import './styles/global.css';
 
@@ -24,9 +26,17 @@ function PrivateRoute({ children, roles }) {
 }
 
 function Layout({ children }) {
+  const { mobileSidebarOpen, closeMobileSidebar } = useLayout();
+
+  useEffect(() => {
+    document.body.classList.toggle('menu-open', mobileSidebarOpen);
+    return () => document.body.classList.remove('menu-open');
+  }, [mobileSidebarOpen]);
+
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <div className={`app-layout ${mobileSidebarOpen ? 'mobile-sidebar-open' : ''}`}>
+      <Sidebar onNavigate={closeMobileSidebar} />
+      {mobileSidebarOpen && <button type="button" className="sidebar-backdrop" aria-label="Cerrar menú" onClick={closeMobileSidebar} />}
       <main className="main-content">{children}</main>
     </div>
   );
@@ -58,9 +68,11 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <LayoutProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </LayoutProvider>
       </AuthProvider>
     </ThemeProvider>
   );

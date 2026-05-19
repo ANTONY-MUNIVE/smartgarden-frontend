@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { MoonStar, SunMedium } from 'lucide-react';
+import { Menu } from 'lucide-react';
+import { useLayout } from '../../context/LayoutContext';
 
 export default function Topbar({ title, subtitle, emoji = '🌿' }) {
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { toggleMobileSidebar } = useLayout();
   const [hora, setHora] = useState(new Date());
 
   useEffect(() => {
@@ -15,7 +18,15 @@ export default function Topbar({ title, subtitle, emoji = '🌿' }) {
 
   return (
     <header className="topbar">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+        <button
+          type="button"
+          onClick={toggleMobileSidebar}
+          aria-label="Abrir menú"
+          className="mobile-menu-btn"
+        >
+          <Menu size={18} />
+        </button>
         <div style={{
           width: 42, height: 42, borderRadius: 12,
           background: 'var(--green-light)',
@@ -27,7 +38,7 @@ export default function Topbar({ title, subtitle, emoji = '🌿' }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className="topbar-actions">
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,
           padding: '6px 14px', background: 'var(--green-light)',
