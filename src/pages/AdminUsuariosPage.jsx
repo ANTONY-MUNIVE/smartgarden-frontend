@@ -12,6 +12,7 @@ export default function AdminUsuariosPage() {
   const [usuarios, setUsuarios]       = useState([]);
   const [loading, setLoading]         = useState(true);
   const [guardando, setGuardando]     = useState(false);
+  const [isCompact, setIsCompact]     = useState(typeof window !== 'undefined' ? window.innerWidth <= 900 : false);
   const [modal, setModal]             = useState(false);
   const [editando, setEditando]       = useState(null);
   const [form, setForm]               = useState(FORM_VACIO);
@@ -32,6 +33,13 @@ export default function AdminUsuariosPage() {
   };
 
   useEffect(() => { cargar(); }, []);
+
+  useEffect(() => {
+    const handleResize = () => setIsCompact(window.innerWidth <= 900);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const abrirCrear = () => {
     setEditando(null);
@@ -96,6 +104,51 @@ export default function AdminUsuariosPage() {
     return coincide && (filtroRol === 'todos' || u.rol === filtroRol);
   });
 
+  const renderUsuarioCard = (u) => {
+    const cfg = ROL_CFG[u.rol] || ROL_CFG.estudiante;
+    return (
+      <div key={u.id} className="user-card">
+        <div className="user-card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+            <div className="user-avatar" style={{ background: `${cfg.color}20`, borderColor: `${cfg.color}40`, color: cfg.color }}>{u.avatar}</div>
+            <div style={{ minWidth: 0 }}>
+              <div className="user-name">{u.nombre}</div>
+              <div className="user-username">@{u.username}</div>
+            </div>
+          </div>
+          <span className="user-role-pill" style={{ color: cfg.color, background: cfg.bg }}>{cfg.label}</span>
+        </div>
+
+        <div className="user-card-grid">
+          <div>
+            <div className="user-field-label">Correo</div>
+            <div className="user-field-value">{u.email || 'Sin correo'}</div>
+          </div>
+          <div>
+            <div className="user-field-label">Estado</div>
+            <button onClick={() => toggleActivo(u.id)} className="status-pill" style={{
+              background: u.activo ? 'rgba(26,122,74,0.15)' : 'rgba(239,68,68,0.1)',
+              borderColor: u.activo ? 'rgba(26,122,74,0.3)' : 'rgba(239,68,68,0.3)',
+              color: u.activo ? 'var(--green-accent)' : '#FCA5A5',
+            }}>
+              <span className="status-dot" style={{ background: u.activo ? 'var(--green-accent)' : '#EF4444' }} />
+              {u.activo ? 'Activo' : 'Inactivo'}
+            </button>
+          </div>
+        </div>
+
+        <div className="user-card-actions">
+          <button onClick={() => abrirEditar(u)} className="user-action user-action-edit">
+            <Pencil size={13} /> Editar
+          </button>
+          <button onClick={() => setConfirmarEliminar(u.id)} className="user-action user-action-delete">
+            <Trash2 size={13} /> Eliminar
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) return (
     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
       ⏳ Cargando usuarios...
@@ -114,7 +167,7 @@ export default function AdminUsuariosPage() {
         )}
 
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
+        <div className="admin-users-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
           {[
             { label: 'Estudiantes', count: usuarios.filter(u=>u.rol==='estudiante').length, color: '#4ADE80', icon: '🌱' },
             { label: 'Docentes',    count: usuarios.filter(u=>u.rol==='docente').length,    color: '#60A5FA', icon: '🌿' },
@@ -131,10 +184,10 @@ export default function AdminUsuariosPage() {
         </div>
 
         {/* Barra de acciones */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-          <input className="input" placeholder="🔍 Buscar por nombre, usuario o correo..."
+        <div className="admin-users-toolbar" style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+          <input className="input admin-users-search" placeholder="🔍 Buscar por nombre, usuario o correo..."
             value={busqueda} onChange={e => setBusqueda(e.target.value)} style={{ flex: 1, minWidth: 200 }} />
-          <select className="input" style={{ width: 140 }} value={filtroRol} onChange={e => setFiltroRol(e.target.value)}>
+          <select className="input admin-users-filter" style={{ width: 140 }} value={filtroRol} onChange={e => setFiltroRol(e.target.value)}>
             <option value="todos">Todos los roles</option>
             <option value="estudiante">Estudiante</option>
             <option value="docente">Docente</option>
@@ -143,76 +196,88 @@ export default function AdminUsuariosPage() {
           <button onClick={abrirCrear} className="btn btn-primary"><Plus size={16} /> Nuevo Usuario</button>
         </div>
 
-        {/* Tabla */}
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--bg-border)' }}>
-                {['Usuario', 'Correo', 'Rol', 'Estado', 'Acciones'].map(h => (
-                  <th key={h} style={{ padding: '14px 20px', textAlign: 'left', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtrados.map((u, idx) => {
-                const cfg = ROL_CFG[u.rol] || ROL_CFG.estudiante;
-                return (
-                  <tr key={u.id} style={{ borderBottom: idx < filtrados.length - 1 ? '1px solid var(--bg-border)' : 'none', transition: 'var(--transition)' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                    <td style={{ padding: '14px 20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: `${cfg.color}20`, border: `1px solid ${cfg.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{u.avatar}</div>
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{u.nombre}</div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>@{u.username}</div>
+        {isCompact ? (
+          <div className="user-cards-list">
+            {filtrados.length === 0 ? (
+              <div className="card empty-state">
+                <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
+                <p>No se encontraron usuarios con esos filtros.</p>
+              </div>
+            ) : (
+              filtrados.map(renderUsuarioCard)
+            )}
+          </div>
+        ) : (
+          <div className="card admin-users-table-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Usuario', 'Correo', 'Rol', 'Estado', 'Acciones'].map(h => (
+                    <th key={h} style={{ padding: '14px 20px', textAlign: 'left', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtrados.map((u, idx) => {
+                  const cfg = ROL_CFG[u.rol] || ROL_CFG.estudiante;
+                  return (
+                    <tr key={u.id} style={{ borderBottom: idx < filtrados.length - 1 ? '1px solid var(--border)' : 'none', transition: 'var(--transition)' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--green-light)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                      <td style={{ padding: '14px 20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: '50%', background: `${cfg.color}20`, border: `1px solid ${cfg.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{u.avatar}</div>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text)' }}>{u.nombre}</div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>@{u.username}</div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: '14px 20px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{u.email}</td>
-                    <td style={{ padding: '14px 20px' }}>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: cfg.color, background: cfg.bg, padding: '3px 10px', borderRadius: 20 }}>{cfg.label}</span>
-                    </td>
-                    <td style={{ padding: '14px 20px' }}>
-                      <button onClick={() => toggleActivo(u.id)} style={{
-                        display: 'flex', alignItems: 'center', gap: 6,
-                        background: u.activo ? 'rgba(26,122,74,0.15)' : 'rgba(239,68,68,0.1)',
-                        border: `1px solid ${u.activo ? 'rgba(26,122,74,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                        borderRadius: 20, padding: '3px 10px', cursor: 'pointer',
-                        fontSize: '0.72rem', fontWeight: 700,
-                        color: u.activo ? 'var(--green-accent)' : '#FCA5A5',
-                      }}>
-                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: u.activo ? 'var(--green-accent)' : '#EF4444' }} />
-                        {u.activo ? 'Activo' : 'Inactivo'}
-                      </button>
-                    </td>
-                    <td style={{ padding: '14px 20px' }}>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => abrirEditar(u)} style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 'var(--radius-sm)', padding: '6px 10px', cursor: 'pointer', color: '#60A5FA', display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', fontWeight: 700 }}>
-                          <Pencil size={13} /> Editar
+                      </td>
+                      <td style={{ padding: '14px 20px', fontSize: '0.82rem', color: 'var(--text-soft)' }}>{u.email || 'Sin correo'}</td>
+                      <td style={{ padding: '14px 20px' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: cfg.color, background: cfg.bg, padding: '3px 10px', borderRadius: 20 }}>{cfg.label}</span>
+                      </td>
+                      <td style={{ padding: '14px 20px' }}>
+                        <button onClick={() => toggleActivo(u.id)} style={{
+                          display: 'flex', alignItems: 'center', gap: 6,
+                          background: u.activo ? 'rgba(26,122,74,0.15)' : 'rgba(239,68,68,0.1)',
+                          border: `1px solid ${u.activo ? 'rgba(26,122,74,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                          borderRadius: 20, padding: '3px 10px', cursor: 'pointer',
+                          fontSize: '0.72rem', fontWeight: 700,
+                          color: u.activo ? 'var(--green)' : '#FCA5A5',
+                        }}>
+                          <div style={{ width: 6, height: 6, borderRadius: '50%', background: u.activo ? 'var(--green)' : '#EF4444' }} />
+                          {u.activo ? 'Activo' : 'Inactivo'}
                         </button>
-                        <button onClick={() => setConfirmarEliminar(u.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-sm)', padding: '6px 10px', cursor: 'pointer', color: '#FCA5A5', display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', fontWeight: 700 }}>
-                          <Trash2 size={13} /> Eliminar
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {filtrados.length === 0 && (
-            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
-              <p>No se encontraron usuarios con esos filtros.</p>
-            </div>
-          )}
-        </div>
+                      </td>
+                      <td style={{ padding: '14px 20px' }}>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          <button onClick={() => abrirEditar(u)} className="user-action user-action-edit">
+                            <Pencil size={13} /> Editar
+                          </button>
+                          <button onClick={() => setConfirmarEliminar(u.id)} className="user-action user-action-delete">
+                            <Trash2 size={13} /> Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {filtrados.length === 0 && (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
+                <p>No se encontraron usuarios con esos filtros.</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Modal crear/editar */}
         {modal && (
           <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--bg-border)', borderRadius: 'var(--radius-xl)', padding: 32, width: '100%', maxWidth: 460 }}>
+            <div className="user-modal" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', padding: 32, width: '100%', maxWidth: 460 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 800 }}>
                   {editando ? '✏️ Editar Usuario' : '➕ Nuevo Usuario'}
