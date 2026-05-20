@@ -29,9 +29,17 @@ export default function Topbar({ title, subtitle, emoji = '🌿' }) {
         </button>
         <div style={{
           width: 42, height: 42, borderRadius: 12,
-          background: 'var(--green-light)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
-        }}>{emoji}</div>
+          background: 'linear-gradient(145deg, #E8F7EE 0%, #4ADE80 52%, #1E7040 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden', boxShadow: 'var(--shadow-green)',
+          flexShrink: 0,
+        }}>
+          {emoji ? (
+            <span style={{ fontSize: 22, lineHeight: 1 }}>{emoji}</span>
+          ) : (
+            <img src="/favicon.svg" alt="SmartGardenSchool" width="26" height="26" style={{ display: 'block' }} />
+          )}
+        </div>
         <div className="topbar-title-block">
           <h1 className="page-title">{title}</h1>
           {subtitle && <p className="page-subtitle topbar-subtitle">{subtitle}</p>}

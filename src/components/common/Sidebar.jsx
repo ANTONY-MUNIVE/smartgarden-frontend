@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { LogOut } from 'lucide-react';
 import { useLayout } from '../../context/LayoutContext';
+import BrandMark from './BrandMark';
 
 const NAV = [
   { to: '/dashboard',       icon: '🏠', label: 'Inicio',        roles: ['estudiante','docente','admin'] },
@@ -37,13 +38,7 @@ export default function Sidebar({ onNavigate }) {
       boxShadow: '2px 0 12px rgba(0,0,0,0.04)',
     }}>
       <div style={{ padding: '20px 16px', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 14, background: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, boxShadow: 'var(--shadow-green)' }}>🌱</div>
-          <div>
-            <div style={{ fontFamily: 'var(--font-title)', fontWeight: 700, fontSize: '1rem', color: 'var(--text)', lineHeight: 1.1 }}>HuertoSmart</div>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Huerto Inteligente</div>
-          </div>
-        </div>
+        <BrandMark size={42} subtitle="Huerto Inteligente" />
       </div>
 
       <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>

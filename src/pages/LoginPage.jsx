@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
+import BrandMark from '../components/common/BrandMark';
 
 const ROLES = [
   { username: 'estudiante1', label: 'Soy Estudiante', icon: '🌱', color: '#2D9B5A', bg: '#E8F7EE' },
@@ -35,12 +36,9 @@ export default function LoginPage() {
       <div style={{ width: '100%', maxWidth: 400 }}>
 
         <div className={mounted ? 'animate-up' : ''} style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: 24, background: 'var(--green)',
-            margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 38, boxShadow: 'var(--shadow-green)',
-            animation: 'floatY 4s ease-in-out infinite',
-          }}>🌱</div>
+          <div style={{ display: 'inline-flex', animation: 'floatY 4s ease-in-out infinite' }}>
+            <BrandMark size={80} showText={false} subtitle="Huerto Inteligente" />
+          </div>
           <h1 style={{ fontFamily: 'var(--font-title)', fontSize: '2rem', fontWeight: 700, color: 'var(--text)' }}>
             ¡Hola! 👋
           </h1>
