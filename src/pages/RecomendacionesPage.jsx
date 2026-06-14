@@ -17,6 +17,19 @@ export default function RecomendacionesPage() {
   const [filtroEstado, setFiltroEstado] = useState('pendientes'); // 'pendientes' o 'hecho'
   const ultimasRecsIARef = useRef(''); // Hash de recomendaciones guardadas
 
+  const normalizarPrioridad = (prioridad) => {
+    const valor = (prioridad || '').toString().trim().toLowerCase();
+    return valor.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  };
+
+  const getPrioridadRank = (prioridad) => {
+    const ranks = { critico: 0, alta: 1, media: 2, baja: 3 };
+    const prioridadNormalizada = normalizarPrioridad(prioridad);
+    return Object.prototype.hasOwnProperty.call(ranks, prioridadNormalizada)
+      ? ranks[prioridadNormalizada]
+      : 4;
+  };
+
   const cargarRecomendaciones = async () => {
     try {
       const data = await api.getRecomendaciones();
@@ -130,6 +143,10 @@ export default function RecomendacionesPage() {
   );
 
   const cfgIA = P_CFG[prioridadIA] || P_CFG.baja;
+  const recomendacionesOrdenadas = [...lista].sort(
+    (a, b) => getPrioridadRank(a.prioridad) - getPrioridadRank(b.prioridad)
+      || Number(a.id || 0) - Number(b.id || 0),
+  );
 
   const getIconoVisible = (rec) => {
     const icono = typeof rec.icono === 'string' ? rec.icono.trim() : '';
@@ -155,8 +172,8 @@ export default function RecomendacionesPage() {
               ¡El sistema analizó tu huerto!
             </div>
             <div style={{ fontSize: '0.88rem', color: 'var(--text-soft)' }}>
-              {lista.filter(r => !r.aplicada).length} sugerencias pendientes ·{' '}
-              {lista.filter(r => r.aplicada).length} aplicadas ✅
+              {recomendacionesOrdenadas.filter(r => !r.aplicada).length} sugerencias pendientes ·{' '}
+              {recomendacionesOrdenadas.filter(r => r.aplicada).length} aplicadas ✅
             </div>
           </div>
         </div>
@@ -279,7 +296,7 @@ export default function RecomendacionesPage() {
                 transition: 'all 0.3s ease'
               }}
             >
-              📋 Pendientes ({lista.filter(r => !r.aplicada).length})
+              📋 Pendientes ({recomendacionesOrdenadas.filter(r => !r.aplicada).length})
             </button>
             <button
               onClick={() => setFiltroEstado('hecho')}
@@ -295,15 +312,15 @@ export default function RecomendacionesPage() {
                 transition: 'all 0.3s ease'
               }}
             >
-              ✅ Hecho ({lista.filter(r => r.aplicada).length})
+              ✅ Hecho ({recomendacionesOrdenadas.filter(r => r.aplicada).length})
             </button>
           </div>
 
           {/* Lista filtrada */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {(filtroEstado === 'pendientes'
-              ? lista.filter(r => !r.aplicada)
-              : lista.filter(r => r.aplicada)
+              ? recomendacionesOrdenadas.filter(r => !r.aplicada)
+              : recomendacionesOrdenadas.filter(r => r.aplicada)
             ).length === 0 ? (
               <div style={{ textAlign: 'center', padding: '20px', color: '#7C3AED', fontSize: '0.9rem' }}>
                 {filtroEstado === 'pendientes'
@@ -312,8 +329,8 @@ export default function RecomendacionesPage() {
               </div>
             ) : (
               (filtroEstado === 'pendientes'
-                ? lista.filter(r => !r.aplicada)
-                : lista.filter(r => r.aplicada)
+                ? recomendacionesOrdenadas.filter(r => !r.aplicada)
+                : recomendacionesOrdenadas.filter(r => r.aplicada)
               ).map((rec) => {
                 const cfg = P_CFG[rec.prioridad] || P_CFG.baja;
                 return (
